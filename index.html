@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hành Trình Tiếng Việt 2 - HK1</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- React & ReactDOM -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <!-- Babel compiler -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-amber-50/60 font-sans text-slate-800">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    // Icon helper component
+    const Icon = ({ name, className = "w-5 h-5", ...props }) => {
+      useEffect(() => {
+        if (window.lucide) {
+          window.lucide.createIcons();
+        }
+      }, [name]);
+      return <i data-lucide={name} className={className} {...props}></i>;
+    };
+
+    function App() {
+      const [activeTab, setActiveTab] = useState('theory');
+      const [theorySubTab, setTheorySubTab] = useState(1);
+      const [practiceGame, setPracticeGame] = useState(1);
+      
+      const [unlockedLessons, setUnlockedLessons] = useState(() => {
+        const saved = localStorage.getItem('tv2_unlocked_lessons');
+        if (saved) {
+          try { return JSON.parse(saved); } catch (e) {}
+        }
+        return { 1: true, 2: false, 3: false, 4: false };
+      });
+
+      const [showTeacherModal, setShowTeacherModal] = useState(false);
+      const [isTeacherAuthenticated, setIsTeacherAuthenticated] = useState(false);
+      const [passwordInput, setPasswordInput] = useState('');
+      const [passwordError, setPasswordError] = useState(false);
+
+      useEffect(() => {
+        localStorage.setItem('tv2_unlocked_lessons', JSON.stringify(unlockedLessons));
+      }, [unlockedLessons]);
+
+      useEffect(() => {
+        if (window.lucide) window.lucide.createIcons();
+      });
+
+      const toggleUnlockLesson = (id) => {
+        setUnlockedLessons(prev => ({ ...prev, [id]: !prev[id] }));
+      };
+
+      const handleTeacherLogin = (e) => {
+        e.preventDefault();
+        if (passwordInput === '0111') {
+          setIsTeacherAuthenticated(true);
+          setPasswordError(false);
+          setPasswordInput('');
+        } else {
+          setPasswordError(true);
+        }
+      };
+
+      const [stars, setStars] = useState(0);
+      const [badges, setBadges] = useState({
+        vocabMaster: false,
+        sentenceExpert: false,
+        punctuationPro: false,
+        themeExplorer: false
+      });
+
+      const speakText = (text) => {
+        if ('speechSynthesis' in window) {
+          window.speechSynthesis.cancel();
+          const utterance = new SpeechSynthesisUtterance(text);
+          utterance.lang = 'vi-VN';
+          utterance.rate = 0.9;
+          window.speechSynthesis.speak(utterance);
+        }
+      };
+
+      const addStars = (amount) => {
+        setStars(prev => {
+          const newScore = prev + amount;
+          if (newScore >= 20 && !badges.vocabMaster) setBadges(b => ({ ...b, vocabMaster: true }));
+          if (newScore >= 40 && !badges.sentenceExpert) setBadges(b => ({ ...b, sentenceExpert: true }));
+          if (newScore >= 60 && !badges.punctuationPro) setBadges(b => ({ ...b, punctuationPro: true }));
+          if (newScore >= 80 && !badges.themeExplorer) setBadges(b => ({ ...b, themeExplorer: true }));
+          return newScore;
+        });
+      };
+
+      return (
+        <div className="min-h-screen flex flex-col">
+          {/* Header */}
+          <header className="bg-white border-b-4 border-amber-300 shadow-sm sticky top-0 z-40">
+            <div className="max-w-6xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-amber-400 rounded-2xl flex items-center justify-center shadow-md text-2xl">
+                  📚
+                </div>
+                <div>
+                  <h1 className="text-xl md:text-2xl font-black text-amber-700 uppercase">Tiếng Việt 2 - HK1</h1>
+                  <p className="text-xs font-semibold text-slate-500">Học vui vẻ - Hiểu thật sâu!</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 bg-gradient-to-r from-amber-100 to-yellow-200 px-4 py-2 rounded-full border-2 border-amber-400 shadow-inner">
+                  <span className="text-xl">⭐</span>
+                  <span className="font-extrabold text-amber-900 text-lg">{stars}</span>
+                  <span className="text-xs font-bold text-amber-700 uppercase hidden sm:inline">Sao</span>
+                </div>
+
+                <button
+                  onClick={() => setShowTeacherModal(true)}
+                  className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-800 text-white rounded-full font-bold text-xs hover:bg-slate-700 transition"
+                >
+                  <Icon name="key-round" className="w-4 h-4 text-amber-400" />
+                  <span>Dành cho Giáo viên</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Nav Tabs */}
+            <div className="bg-amber-100/70 border-t border-amber-200">
+              <div className="max-w-6xl mx-auto px-4 flex justify-around md:justify-start gap-2 md:gap-4 overflow-x-auto py-2">
+                {[
+                  { id: 'theory', label: '1. Lý Thuyết & Ví Dụ', icon: 'book-open', color: 'text-blue-600' },
+                  { id: 'practice', label: '2. Góc Luyện Tập', icon: 'sparkles', color: 'text-emerald-600' },
+                  { id: 'creative', label: '3. Góc Sáng Tạo', icon: 'feather', color: 'text-purple-600' },
+                  { id: 'badges', label: '4. Thành Tích', icon: 'award', color: 'text-amber-600' }
+                ].map(tab => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm md:text-base transition-all whitespace-nowrap ${
+                      activeTab === tab.id 
+                        ? 'bg-white text-slate-900 shadow-md border-2 border-amber-400 transform -translate-y-0.5' 
+                        : 'text-slate-600 hover:bg-white/60'
+                    }`}
+                  >
+                    <Icon name={tab.icon} className={`w-5 h-5 ${tab.color}`} />
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </header>
+
+          {/* Main Content */}
+          <main className="flex-1 max-w-6xl w-full mx-auto p-4 md:p-6">
+            {activeTab === 'theory' && (
+              <TheorySection 
+                subTab={theorySubTab} 
+                setSubTab={setTheorySubTab} 
+                speakText={speakText} 
+                unlockedLessons={unlockedLessons}
+              />
+            )}
+            {activeTab === 'practice' && (
+              <PracticeSection 
+                game={practiceGame} 
+                setGame={setPracticeGame} 
+                addStars={addStars} 
+                speakText={speakText} 
+                unlockedLessons={unlockedLessons}
+              />
+            )}
+            {activeTab === 'creative' && (
+              <CreativeSection addStars={addStars} speakText={speakText} />
+            )}
+            {activeTab === 'badges' && (
+              <BadgesSection stars={stars} badges={badges} />
+            )}
+          </main>
+
+          {/* Teacher Modal */}
+          {showTeacherModal && (
+            <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+              <div className="bg-white border-4 border-slate-700 rounded-3xl max-w-md w-full p-6 shadow-2xl relative">
+                <button
+                  onClick={() => { setShowTeacherModal(false); setPasswordError(false); }}
+                  className="absolute top-4 right-4 p-1.5 rounded-full hover:bg-slate-100 text-slate-500 font-bold"
+                >
+                  ✕
+                </button>
+
+                {!isTeacherAuthenticated ? (
+                  <form onSubmit={handleTeacherLogin} className="space-y-4 text-center">
+                    <div className="w-14 h-14 bg-amber-100 text-amber-700 rounded-2xl flex items-center justify-center mx-auto text-2xl font-bold">🔐</div>
+                    <h3 className="text-xl font-black text-slate-800">Xác minh Giáo viên</h3>
+                    <p className="text-sm text-slate-500">Nhập mật khẩu để quản lý mở khóa bài học:</p>
+                    <input
+                      type="password"
+                      value={passwordInput}
+                      onChange={(e) => { setPasswordInput(e.target.value); setPasswordError(false); }}
+                      placeholder="Nhập mật khẩu..."
+                      className={`w-full text-center px-4 py-3 rounded-2xl border-2 font-bold text-lg ${
+                        passwordError ? 'border-rose-500 bg-rose-50' : 'border-slate-300'
+                      }`}
+                      autoFocus
+                    />
+                    {passwordError && <p className="text-xs font-bold text-rose-500">Mật khẩu chưa đúng!</p>}
+                    <button type="submit" className="w-full bg-amber-400 font-black py-3 rounded-2xl shadow-md">Xác nhận</button>
+                  </form>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between border-b pb-3">
+                      <h3 className="font-extrabold text-slate-800 text-lg">Bảng Quản Lý Mở Khóa</h3>
+                      <button onClick={() => setIsTeacherAuthenticated(false)} className="text-xs text-rose-600 font-bold">Đăng xuất</button>
+                    </div>
+                    <div className="space-y-2">
+                      {[
+                        { id: 1, name: "Bài 1: Phân loại từ vựng" },
+                        { id: 2, name: "Bài 2: Mở rộng vốn từ (4 chủ điểm)" },
+                        { id: 3, name: "Bài 3: Các kiểu câu cơ bản" },
+                        { id: 4, name: "Bài 4: Dấu câu" }
+                      ].map(lesson => (
+                        <div key={lesson.id} className="p-3 rounded-2xl border-2 flex items-center justify-between bg-slate-50">
+                          <span className="font-bold text-sm">{lesson.name}</span>
+                          <button
+                            onClick={() => toggleUnlockLesson(lesson.id)}
+                            className={`px-3 py-1 rounded-xl text-xs font-black ${
+                              unlockedLessons[lesson.id] ? 'bg-emerald-600 text-white' : 'bg-slate-300 text-slate-700'
+                            }`}
+                          >
+                            {unlockedLessons[lesson.id] ? 'ĐÃ MỞ' : 'ĐANG KHÓA'}
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    <button onClick={() => setShowTeacherModal(false)} className="w-full bg-slate-800 text-white font-bold py-2.5 rounded-xl text-sm">Đóng</button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    function TheorySection({ subTab, setSubTab, speakText, unlockedLessons }) {
+      const tabs = [
+        { id: 1, title: 'Phân loại từ vựng', emoji: '🏷️' },
+        { id: 2, title: 'Mở rộng vốn từ', emoji: '📖' },
+        { id: 3, title: 'Các kiểu câu', emoji: '💬' },
+        { id: 4, title: 'Dấu câu', emoji: '✍️' }
+      ];
+
+      if (!unlockedLessons[subTab]) {
+        return (
+          <div className="bg-white p-8 rounded-3xl border-2 border-dashed border-amber-300 text-center space-y-4 max-w-xl mx-auto my-8">
+            <div className="text-5xl">🔒</div>
+            <h3 className="text-2xl font-black text-slate-800">Bài học đang tạm khóa</h3>
+            <p className="text-slate-600 font-medium text-sm">Hãy kiên nhẫn đợi thầy cô giáo mở khóa để học nhé!</p>
+            <button onClick={() => setSubTab(1)} className="bg-amber-400 text-amber-950 font-black px-6 py-3 rounded-2xl shadow-md">Học Bài 1 (Đã Mở) 🚀</button>
+          </div>
+        );
+      }
+
+      return (
+        <div className="space-y-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {tabs.map(t => (
+              <button
+                key={t.id}
+                onClick={() => setSubTab(t.id)}
+                className={`p-3 rounded-2xl font-bold flex items-center justify-center gap-2 border-2 transition ${
+                  subTab === t.id ? 'bg-amber-400 text-amber-950 border-amber-500' : 'bg-white border-slate-200'
+                }`}
+              >
+                <span>{t.emoji}</span> <span>{t.title}</span>
+                {!unlockedLessons[t.id] && <span className="text-xs">🔒</span>}
+              </button>
+            ))}
+          </div>
+
+          {subTab === 1 && (
+            <div className="bg-white p-6 rounded-3xl border-2 border-emerald-300 space-y-4">
+              <h2 className="text-xl font-black text-emerald-900">📦 Từ chỉ sự vật, hoạt động, đặc điểm</h2>
+              <p className="text-sm text-slate-700">Ví dụ từ chỉ sự vật: <span className="font-bold text-emerald-700">thầy giáo, học sinh, bàn ghế, chó, mèo, cây bàng, mưa...</span></p>
+              <p className="text-sm text-slate-700">Ví dụ từ chỉ hoạt động: <span className="font-bold text-sky-700">đi, chạy, nhảy, đọc, viết, quét nhà, tưới cây...</span></p>
+              <p className="text-sm text-slate-700">Ví dụ từ chỉ đặc điểm: <span className="font-bold text-pink-700">đỏ, xanh, to, nhỏ, chăm chỉ, ngoan ngoãn...</span></p>
+            </div>
+          )}
+          {subTab === 2 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {[
+                { title: "1. Em là học sinh", words: ["sách", "vở", "bút", "học bài", "nghe giảng"] },
+                { title: "2. Đi học và đi chơi", words: ["đá bóng", "nhảy dây", "công viên", "đi bộ"] },
+                { title: "3. Mái ấm gia đình", words: ["ông bà", "bố mẹ", "yêu thương", "chăm sóc"] },
+                { title: "4. Bạn bè của em", words: ["bạn thân", "giúp đỡ", "đoàn kết", "tốt bụng"] }
+              ].map((item, i) => (
+                <div key={i} className="bg-white p-5 rounded-3xl border-2 border-amber-200">
+                  <h3 className="font-black text-amber-900 mb-2">{item.title}</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {item.words.map((w, idx) => (
+                      <span key={idx} onClick={() => speakText(w)} className="bg-amber-50 px-3 py-1 rounded-xl text-xs font-bold border border-amber-200 cursor-pointer">
+                        {w} 🔊
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          {subTab === 3 && (
+            <div className="space-y-3">
+              <div className="bg-white p-4 rounded-2xl border-2 border-indigo-200">
+                <h4 className="font-bold text-indigo-900">1. Câu giới thiệu (Ai là gì?):</h4>
+                <p className="text-sm font-semibold text-slate-700">"Em là học sinh lớp 2."</p>
+              </div>
+              <div className="bg-white p-4 rounded-2xl border-2 border-teal-200">
+                <h4 className="font-bold text-teal-900">2. Câu nêu hoạt động (Ai làm gì?):</h4>
+                <p className="text-sm font-semibold text-slate-700">"Bé đang quét nhà giúp mẹ."</p>
+              </div>
+              <div className="bg-white p-4 rounded-2xl border-2 border-rose-200">
+                <h4 className="font-bold text-rose-900">3. Câu nêu đặc điểm (Ai thế nào?):</h4>
+                <p className="text-sm font-semibold text-slate-700">"Mái tóc của bà bạc trắng."</p>
+              </div>
+            </div>
+          )}
+          {subTab === 4 && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-white p-5 rounded-3xl border-2 border-blue-200 text-center">
+                <div className="text-4xl font-black text-blue-600 mb-2">.</div>
+                <h4 className="font-bold">Dấu chấm</h4>
+                <p className="text-xs text-slate-500">Cuối câu kể trọn vẹn ý.</p>
+              </div>
+              <div className="bg-white p-5 rounded-3xl border-2 border-amber-200 text-center">
+                <div className="text-4xl font-black text-amber-600 mb-2">?</div>
+                <h4 className="font-bold">Dấu chấm hỏi</h4>
+                <p className="text-xs text-slate-500">Cuối câu hỏi.</p>
+              </div>
+              <div className="bg-white p-5 rounded-3xl border-2 border-emerald-200 text-center">
+                <div className="text-4xl font-black text-emerald-600 mb-2">,</div>
+                <h4 className="font-bold">Dấu phẩy</h4>
+                <p className="text-xs text-slate-500">Ngăn cách các từ cùng loại.</p>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    function PracticeSection({ game, setGame, addStars, speakText, unlockedLessons }) {
+      return (
+        <div className="bg-white p-6 rounded-3xl border-2 border-emerald-300 text-center space-y-4">
+          <h3 className="text-xl font-black text-emerald-900">🎮 Góc Luyện Tập Trực Quan</h3>
+          <p className="text-slate-600 text-sm">Bé hãy bấm nghe và ôn tập lại kiến thức nhé!</p>
+          <div className="flex justify-center gap-3">
+            {['thầy giáo', 'bút chì', 'chạy bộ', 'ngoan ngoãn'].map((word, i) => (
+              <button key={i} onClick={() => { speakText(word); addStars(5); }} className="bg-emerald-100 hover:bg-emerald-200 text-emerald-900 font-bold px-4 py-2 rounded-2xl text-sm">
+                {word} 🔊 (+5 sao)
+              </button>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    function CreativeSection({ addStars, speakText }) {
+      const [sentence, setSentence] = useState('');
+      return (
+        <div className="bg-white p-6 rounded-3xl border-2 border-purple-300 text-center space-y-4">
+          <h3 className="text-xl font-black text-purple-900">✨ Máy Ghép Câu Vui Nhộn</h3>
+          <div className="flex justify-center gap-2">
+            <button onClick={() => { setSentence("Em là học sinh lớp 2."); addStars(10); speakText("Em là học sinh lớp 2."); }} className="bg-purple-100 font-bold px-4 py-2 rounded-xl text-sm">
+              Tạo câu 1
+            </button>
+            <button onClick={() => { setSentence("Bé đang quét nhà giúp mẹ."); addStars(10); speakText("Bé đang quét nhà giúp mẹ."); }} className="bg-purple-100 font-bold px-4 py-2 rounded-xl text-sm">
+              Tạo câu 2
+            </button>
+          </div>
+          {sentence && <p className="text-2xl font-black text-purple-800">"{sentence}"</p>}
+        </div>
+      );
+    }
+
+    function BadgesSection({ stars, badges }) {
+      return (
+        <div className="bg-white p-6 rounded-3xl border-2 border-amber-300 text-center space-y-4">
+          <h3 className="text-2xl font-black text-amber-900">🏆 Bảng Thành Tích Học Tập</h3>
+          <p className="text-lg font-bold text-amber-700">Tổng số sao tích lũy: {stars} 🌟</p>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
